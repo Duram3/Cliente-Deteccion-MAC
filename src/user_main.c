@@ -116,9 +116,10 @@ os_timer_t temporizador;
 /***************************************************************************************************
                            VARIABLES DE COMUNICACIÓN CON EL SERVIDOR
                            ------------------------------------------
- * : def
- * : def
- *  : def
+ * own_espconn: descriptor para las conexiones del ESP8266, maneja status y errores de conexiones 
+                TCP y UDP
+ * user_tcp: estructura que contiene toda la información relativa a la conexión TCP: puertos, IP y 
+             funciones de manejo de eventos TCP
 ****************************************************************************************************/
 struct espconn own_espconn;
 esp_tcp user_tcp;
@@ -143,22 +144,26 @@ typedef struct {
 }ordenCanales;
 ordenCanales listaCanales[15];
 
-uint8 nroCanal=0;
-uint8 nroLista=0;
-uint8 nroSlots=0;
-
 /***************************************************************************************************
                         VARIABLES DE LECTURA DE DIRECCIONES MAC - PROBE REQUEST
                         -------------------------------------------------------
- * bufferdeAlmacenamiento: lista que guarda la información del espacio de tiempo de lectura asignado a cada canal
-                 según el nro de paquetes recibidos por cada uno de ellos en el proceso de escaneo
  * nroCanal: controla el cambio de canal en el estado de asignación de tiempo por canales
  * nroLista: controla el canal miembro de la lista listaCanales que se debe establecer en cualquier
              momento de la lectura de datos, según el tiempo de lectura asignado al mismo
                         para el funcionamiento del temporizador por hardware
  * nroSlots: controla que cada canal se mantenga en lectura de datos de acuerdo al tiempo asignado
              a este en el proceso de escaneo
+ * tamayioAcumulado: lleva la cuenta de la cantidad de paquetes capturados, así se arma el buffer de
+                     envío TCP del tamaño adecuado
+ * bufferdeAlmacenamiento: lista que guarda la información del espacio de tiempo de lectura asignado a cada 
+                           canal según el nro de paquetes recibidos por cada uno de ellos en el proceso de escaneo
+ * bufferdeEnvio: buffer que contiene la información de las direcciones MAC detectadas, ya serializada
+                  y lista para enviar
+
 ****************************************************************************************************/
+uint8 nroCanal=0;
+uint8 nroLista=0;
+uint8 nroSlots=0;
 
 uint16 tamayioAcumulado=0;
 uint8 bufferdeAlmacenamiento [nroPaquetesxEnvio][nroBytesxPaquete]={0};
@@ -167,6 +172,10 @@ uint8 bufferdeEnvio[nroPaquetesxEnvio*nroBytesxPaquete+1];
 /***************************************************************************************************
                         ESTRUCTURAS PARA LECTURA DE TRAMAS 802.11
                         -------------------------------------------------------
+ * RxControl: contiene información técnica precisa sobre la conexión con el STA del cual se recibe la
+              trama capturada: RSSI, canal, MCS y otros.
+ * sniffer_buf: almacena la data completa dentro de la trama capturada, de aquí se extra la dirección
+                MAC del dispositivo que envía
 ****************************************************************************************************/
 
 
@@ -205,6 +214,10 @@ typedef struct {
     u16 len;  
 } sniffer_buf;
 
+/***************************************************************************************************
+                                                FUNCIONES
+                                              -------------
+****************************************************************************************************/
 
 //___________________________________________________________________________
 void ICACHE_FLASH_ATTR cambiaEstado(Estado nuevoEstado)
