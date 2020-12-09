@@ -408,7 +408,7 @@ void solicitudIP(void)
         own_espconn.state = ESPCONN_NONE;
         own_espconn.proto.tcp = &user_tcp;
         
-        const char esp_server_ip[4] = {192, 168, 1, 111}; 
+        const char esp_server_ip[4] = {000, 000, 0, 000}; 
         os_memcpy(own_espconn.proto.tcp->remote_ip, esp_server_ip, 4); 
         own_espconn.proto.tcp->remote_port = 3000;
         own_espconn.proto.tcp->local_port = espconn_port();
@@ -459,8 +459,8 @@ void solicitudIP(void)
 void ICACHE_FLASH_ATTR configEstacion(void)
 {
     
-    char ssid[32] = "TATA";
-    char password[64] = "Npmm-7.Amt-7.";
+    char ssid[32] = "****";
+    char password[64] = "*************";
     struct station_config stationConf;    
     
     wifi_station_get_config(&stationConf);
